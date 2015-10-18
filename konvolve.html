@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+  <title>VoiceKonvolv</title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+  <link rel="shortcut icon" href="assets/favicon.ico">
+  <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+  <link rel="import" href="assets/spiral-bp-header.html">
+</head>
+<body unresolved>
+
+  <h1>VoiceKonvolv</h1>
+
+  <spiral-knob id="k-speed" label="Speed" value="1.0" min-value="0.01" max-value="2.0"></spiral-knob>
+
+  <script>
+    window.addEventListener('WebComponentsReady', function () {
+
+      var kSpeed = document.querySelector('#k-speed');
+      var context = new AudioContext();
+      var files = [
+        { name: 'stage', url: 'sounds/960-BriteStage.mp3' }
+      ];
+
+      var myBuffers;
+      var reverb = context.createConvolver();
+      reverb.to(context.DAC);
+
+      // TODO: Use AudioParam to shape the envelope.
+      // TODO: Change the playback speed of the sample with a knob.
+
+      function gotStream(stream) {
+          var mediaStreamSource = context.createMediaStreamSource( stream );
+          mediaStreamSource.connect( reverb );
+      }
+
+      function setBuffers(buffers) {
+        myBuffers = buffers;
+        reverb.buffer = buffers.get('stage');
+      }
+      
+      navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia;
+      navigator.getUserMedia( {audio:true}, gotStream );
+      context.loadAudioFiles(files, function() {})
+        .then(setBuffers, null)
+    });
+  </script>
+</body>
+</html>
