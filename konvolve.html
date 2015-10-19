@@ -7,44 +7,127 @@
   <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
   <link rel="shortcut icon" href="assets/favicon.ico">
   <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+  <script src="assets/interact.min.js"></script>
   <link rel="import" href="assets/spiral-bp-header.html">
+  <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body unresolved>
 
   <h1>VoiceKonvolv</h1>
 
-  <spiral-knob id="k-speed" label="Speed" value="1.0" min-value="0.01" max-value="2.0"></spiral-knob>
+<!--   <spiral-knob id="k-speed" label="Speed" value="1.0" min-value="0.01" max-value="2.0"></spiral-knob> -->
+  <div class="section group">
+    <div class="col span_1_of_8" style="background: #0B486B;">
+      1 of 8
+      <div class="resize-bar"></div>
+    </div>
+    <div class="col span_1_of_8" style="background: #3B8686;">
+      1 of 8
+      <div class="resize-bar"></div>
+    </div>
+    <div class="col span_1_of_8" style="background: #79BD9A;">
+      1 of 8
+      <div class="resize-bar"></div>
+    </div>
+    <div class="col span_1_of_8" style="background: #A8DBA8;">
+      1 of 8
+      <div class="resize-bar"></div>
+    </div>
+    <div class="col span_1_of_8" style="background: #CFF09E;">
+      1 of 8
+      <div class="resize-bar"></div>
+    </div>
+    <div class="col span_1_of_8" style="background: #A8DBA8;">
+      1 of 8
+      <div class="resize-bar"></div>
+    </div>
+    <div class="col span_1_of_8" style="background: #79BD9A;">
+      1 of 8
+      <div class="resize-bar"></div>
+    </div>
+    <div class="col span_1_of_8" style="background: #3B8686;">
+      1 of 8
+      <div class="resize-bar"></div>
+    </div>
+  </div>
 
   <script>
-    window.addEventListener('WebComponentsReady', function () {
+    window.addEventListener('load', function () {
 
-      var kSpeed = document.querySelector('#k-speed');
+      interact('.resize-bar')
+        .resizable({
+          edges: { left: false, right: false, bottom: false, top: true }
+        })
+        .on('resizemove', function (event) {
+          var target = event.target,
+              x = (parseFloat(target.getAttribute('data-x')) || 0),
+              y = (parseFloat(target.getAttribute('data-y')) || 0);
+
+          // update the element's style if less than max height
+          if(y>=0){
+            target.style.height = event.rect.height + 'px';
+
+            // translate when resizing from top or left edges
+            y += event.deltaRect.top;
+            target.style.webkitTransform = target.style.transform =
+                'translate(' + x + 'px,' + y + 'px)';
+
+            target.setAttribute('data-x', x);
+            target.setAttribute('data-y', y);
+          } else {
+//             y=0;
+//             event.deltaRect.top=0;
+//             console.log(event.deltaRect.top);
+            target.setAttribute('data-y', 0);
+            target.style.height = '400px';
+            target.style.webkitTransform = target.style.transform = 'none';
+          }
+//           target.textContent = Math.round(event.rect.width) + '×' + Math.round(event.rect.height);
+        });
+
+//       var kSpeed = document.querySelector('#k-speed');
       var context = new AudioContext();
-      var files = [
-        { name: 'stage', url: 'sounds/960-BriteStage.mp3' }
-      ];
-
+      var files = [ { name: 'stage', url: 'sounds/960-BriteStage.mp3' } ];
       var myBuffers;
       var reverb = context.createConvolver();
-      reverb.to(context.DAC);
-
-      // TODO: Use AudioParam to shape the envelope.
-      // TODO: Change the playback speed of the sample with a knob.
-
-      function gotStream(stream) {
-          var mediaStreamSource = context.createMediaStreamSource( stream );
-          mediaStreamSource.connect( reverb );
-      }
 
       function setBuffers(buffers) {
         myBuffers = buffers;
         reverb.buffer = buffers.get('stage');
       }
-      
-      navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia;
-      navigator.getUserMedia( {audio:true}, gotStream );
+
+      function gotStream( stream ) {
+        s = stream;
+        var mediaStreamSource = context.createMediaStreamSource( stream );
+        mediaStreamSource.connect( reverb );
+        reverb.connect(context.destination);
+      }
+
+      function error(){
+        alert('Stream generation failed.');
+      }
+
+      function init() {
+        getUserMedia({audio:true}, gotStream, error);
+      }
+
+      function getUserMedia(dictionary, callback, error) {
+        try {
+          navigator.getUserMedia = ( navigator.getUserMedia ||
+                       navigator.webkitGetUserMedia ||
+                       navigator.mozGetUserMedia ||
+                       navigator.msGetUserMedia);
+
+          navigator.getUserMedia(dictionary, callback, error);
+
+        } catch (e) {
+          alert('getUserMedia threw exception :' + e);
+        }
+      }
+
       context.loadAudioFiles(files, function() {})
         .then(setBuffers, null)
+        .then(init, null)
     });
   </script>
 </body>
